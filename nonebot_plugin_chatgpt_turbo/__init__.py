@@ -1,11 +1,18 @@
 import nonebot
 import openai
 
-from nonebot import on_command
+from html import unescape
+from nonebot import on_command, on_message, get_bot
 from nonebot.params import CommandArg
 from nonebot.rule import to_me
-from nonebot.adapters.onebot.v12 import Message, MessageSegment
-from nonebot.adapters.onebot.v12 import GroupMessageEvent, PrivateMessageEvent, MessageEvent
+from nonebot.permission import SUPERUSER
+from nonebot.adapters.onebot.v12 import (
+    Bot,
+    Message, 
+    MessageSegment,
+    GroupMessageEvent, 
+    PrivateMessageEvent, 
+    MessageEvent)
 from .config import Config, ConfigError
 from .ChatSession import ChatSession
 
@@ -29,11 +36,24 @@ max_limit = plugin_config.openai_max_history_limit
 public = plugin_config.chatgpt_turbo_public
 session = {}
 
-# 带上下文的聊天
-chat_record = on_command("chat", block=False, priority=1)
+# on_message的判断规则。群消息需要艾特，私聊直接回复
+async def rule_check(event: MessageEvent, bot: Bot) -> bool:
+    # 群聊
+    if isinstance(event, GroupMessageEvent):
+        if event.is_tome():
+            return True
+        else:
+            return False
+    # 私聊
+    elif isinstance(event, PrivateMessageEvent):
+        if plugin_config.enable_private_chat:
+            return True
+        else:
+            return False
+    return False
 
-# 不带上下文的聊天
-chat_request = on_command("", rule=to_me(), block=False, priority=99)
+# 带上下文的聊天
+chat_record = on_message(rule=rule_check)
 
 # 清除历史记录
 clear_request = on_command("clear", block=True, priority=1)
@@ -41,17 +61,17 @@ clear_request = on_command("clear", block=True, priority=1)
 
 # 带记忆的聊天
 @chat_record.handle()
-async def _(event: MessageEvent, msg: Message = CommandArg()):
-    # 若未开启私聊模式则检测到私聊就结束
-    if isinstance(event, PrivateMessageEvent) and not plugin_config.enable_private_chat:
-        chat_record.finish("对不起，私聊暂不支持此功能。")
+async def _(event: MessageEvent):
+    #屏蔽 / 开头的消息，防止其他插件命令触发机器人
+    if event.get_message().extract_plain_text().startswith('/'):
+        return
 
     # 检测是否填写 API key
     if api_key == "":
         await chat_record.finish(MessageSegment.text("请先配置openai_api_key"), at_sender=True)
 
     # 提取提问内容
-    content = msg.extract_plain_text()
+    content = unescape(event.get_plaintext().strip())
     if content == "" or content is None:
         await chat_record.finish(MessageSegment.text("内容不能为空！"), at_sender=True)
 
@@ -73,31 +93,18 @@ async def _(event: MessageEvent, msg: Message = CommandArg()):
     await chat_record.finish(MessageSegment.text(res), at_sender=True)
 
 
-# 不带记忆的对话
-@chat_request.handle()
-async def _(event: MessageEvent, msg: Message = CommandArg()):
-
-    if isinstance(event, PrivateMessageEvent) and not plugin_config.enable_private_chat:
-        chat_record.finish("对不起，私聊暂不支持此功能。")
-
-    content = msg.extract_plain_text()
-    if content == "" or content is None:
-        await chat_request.finish(MessageSegment.text("内容不能为空！"))
-
-    await chat_request.send(MessageSegment.text("ChatGPT正在思考中......"))
-
-    try:
-        res = await get_response(content, proxy)
-
-    except Exception as error:
-        await chat_request.finish(str(error))
-    await chat_request.finish(MessageSegment.text(res))
-
-
 @clear_request.handle()
 async def _(event: MessageEvent):
-    del session[create_session_id(event)]
-    await clear_request.finish(MessageSegment.text("成功清除历史记录！"), at_sender=True)
+    bot = get_bot()
+    is_superuser = await SUPERUSER(bot, event)
+    if not is_superuser:
+        await clear_request.finish(MessageSegment.text("只有超级管理员可以使用该命令！"), at_sender=True)
+    session_id = create_session_id(event)
+    if session_id in session:
+        del session[create_session_id(event)]
+        await clear_request.finish(MessageSegment.text("成功清除历史记录！"), at_sender=True)
+    else:
+        await clear_request.finish(MessageSegment.text("不存在历史记录！"), at_sender=True)
 
 
 # 根据消息类型创建会话id

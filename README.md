@@ -45,6 +45,7 @@ OPENAI_API_KEY = key
 OPENAI_MODEL_NAME = "gpt-3.5-turbo"
 OPENAI_HTTP_PROXY = "http://127.0.0.1:8001"    # 请使用代理访问api，中国大陆/香港IP调用API有几率会被封禁。也可以不使用，删除即可
 OPENAI_API_BASE = "https://api.chatanywhere.tech"
+SUPERUSERS=["your_wxid"]
 ```
 
 可选内容：
@@ -56,6 +57,6 @@ ENABLE_PRIVATE_CHAT = True   # 私聊开关，默认开启，改为False关闭
 
 # 使用方法
 
-- @机器人发送问题时机器人不具有上下文回复的能力
-- chat 使用该命令进行问答时，机器人具有上下文回复的能力
-- clear 清除当前用户的聊天记录
+- @机器人或私聊可以直接使用，不需要前缀命令
+- /clear 清除当前用户的聊天记录，仅SUPERUSERS
+- 机器人屏蔽了斜杠/开头的消息，防止将命令误判为消息
