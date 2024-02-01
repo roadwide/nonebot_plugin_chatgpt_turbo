@@ -9,6 +9,7 @@ class Config(BaseModel, extra=Extra.ignore):
     openai_http_proxy: Optional[str] = None
     enable_private_chat: bool = True
     chatgpt_turbo_public: bool = False  # 群聊是否开启公共会话
+    openai_api_base: Optional[str] = ""
 
 
 class ConfigError(Exception):

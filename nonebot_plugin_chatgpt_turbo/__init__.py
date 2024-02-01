@@ -4,13 +4,16 @@ import openai
 from nonebot import on_command
 from nonebot.params import CommandArg
 from nonebot.rule import to_me
-from nonebot.adapters.onebot.v11 import Message, MessageSegment
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, PrivateMessageEvent, MessageEvent
+from nonebot.adapters.onebot.v12 import Message, MessageSegment
+from nonebot.adapters.onebot.v12 import GroupMessageEvent, PrivateMessageEvent, MessageEvent
 from .config import Config, ConfigError
 from .ChatSession import ChatSession
 
 # 配置导入
 plugin_config = Config.parse_obj(nonebot.get_driver().config.dict())
+
+if plugin_config.openai_api_base:
+    openai.api_base = plugin_config.openai_api_base
 
 if plugin_config.openai_http_proxy:
     proxy = {'http': plugin_config.openai_http_proxy, 'https': plugin_config.openai_http_proxy}
