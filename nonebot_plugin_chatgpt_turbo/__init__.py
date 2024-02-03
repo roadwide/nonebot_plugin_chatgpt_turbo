@@ -117,7 +117,7 @@ async def send_image(bot: Bot, event: MessageEvent, arg: Message = CommandArg())
     if (event.user_id in plugin_config.img_black_list):
         await draw.finish("您在黑名单中，请虔诚忏悔解封！")
     cmd_text = arg.extract_plain_text().strip()
-    await chat_record.send(MessageSegment.text("正在获取创作灵感......".format(cmd_text)))
+    await draw.send(MessageSegment.text("正在获取创作灵感......".format(cmd_text)))
 
     try:
         openai.api_key = api_key
@@ -135,7 +135,7 @@ async def send_image(bot: Bot, event: MessageEvent, arg: Message = CommandArg())
                                         url=img_url
                                         )
         message = MessageSegment.image(file_id=file_id["file_id"])
-        await draw.finish(message)
+        await draw.send(message)
     except Exception as e:
         await draw.finish(f"An error occurred: {e}")
 
