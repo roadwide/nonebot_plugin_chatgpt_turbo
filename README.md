@@ -22,18 +22,13 @@
 * 手动安装
 
   ```
-  git clone https://github.com/Alpaca4610/nonebot_plugin_chatgpt_turbo.git
+  git clone https://github.com/roadwide/nonebot_plugin_chatgpt_turbo.git
   ```
 
   下载完成后在bot项目的pyproject.toml文件手动添加插件：
 
   ```
   plugin_dirs = ["xxxxxx","xxxxxx",......,"下载完成的插件路径/nonebot-plugin-gpt3.5-turbo"]
-  ```
-* 使用 pip
-
-  ```
-  pip install nonebot-plugin-chatgpt-turbo
   ```
 
 # 配置文件
@@ -43,7 +38,6 @@
 ```
 OPENAI_API_KEY = key
 OPENAI_MODEL_NAME = "gpt-3.5-turbo"
-OPENAI_HTTP_PROXY = "http://127.0.0.1:8001"    # 请使用代理访问api，中国大陆/香港IP调用API有几率会被封禁。也可以不使用，删除即可
 OPENAI_API_BASE = "https://api.chatanywhere.tech"
 SUPERUSERS=["your_wxid"]
 ```
@@ -51,12 +45,15 @@ SUPERUSERS=["your_wxid"]
 可选内容：
 
 ```
+OPENAI_HTTP_PROXY = "http://127.0.0.1:8001"    # 使用代理访问api
 OPENAI_MAX_HISTORY_LIMIT = 30   # 保留与每个用户的聊天记录条数
 ENABLE_PRIVATE_CHAT = True   # 私聊开关，默认开启，改为False关闭
+CHATGPT_TURBO_PUBLIC = True    # 群内是否共享同一个会话
+IMG_BLACK_LIST = ["wxid"]      # 禁止某个用户使用图像生成功能
 ```
 
 # 使用方法
 
 - @机器人或私聊可以直接使用，不需要前缀命令
 - /clear 清除当前用户的聊天记录，仅SUPERUSERS
-- 机器人屏蔽了斜杠/开头的消息，防止将命令误判为消息
+- /draw [prompt] 画图，使用DALL·E的API
