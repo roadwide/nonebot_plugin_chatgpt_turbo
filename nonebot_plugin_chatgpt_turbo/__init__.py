@@ -1,6 +1,8 @@
 import nonebot
 import openai
 
+
+
 from html import unescape
 from nonebot import on_command, on_message, get_bot
 from nonebot.params import CommandArg
@@ -15,6 +17,7 @@ from nonebot.adapters.onebot.v12 import (
     MessageEvent)
 from .config import Config, ConfigError
 from .ChatSession import ChatSession
+from typing import Union
 
 # 配置导入
 plugin_config = Config.parse_obj(nonebot.get_driver().config.dict())
@@ -58,6 +61,8 @@ chat_record = on_message(rule=rule_check)
 # 清除历史记录
 clear_request = on_command("clear", block=True, priority=1)
 
+# 绘画
+draw = on_command("draw")
 
 # 带记忆的聊天
 @chat_record.handle()
@@ -106,6 +111,28 @@ async def _(event: MessageEvent):
     else:
         await clear_request.finish(MessageSegment.text("不存在历史记录！"), at_sender=True)
 
+
+@draw.handle()
+async def send_image(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    cmd_text = arg.extract_plain_text().strip()
+    await chat_record.send(MessageSegment.text("正在获取创作灵感......".format(cmd_text)))
+
+    openai.api_key = api_key
+    response = openai.Image.create(
+        model="dall-e-2",
+        prompt=cmd_text,
+        size="256x256",
+        quality="standard",
+        n=1,
+    )
+
+    img_url = response.data[0].url
+    file_id = await bot.upload_file(type="url",
+                                    name="test.png",
+                                    url=img_url
+                                    )
+    message = MessageSegment.image(file_id=file_id["file_id"])
+    await draw.finish(message)
 
 # 根据消息类型创建会话id
 def create_session_id(event):
