@@ -114,25 +114,30 @@ async def _(event: MessageEvent):
 
 @draw.handle()
 async def send_image(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    if (event.user_id in plugin_config.img_black_list):
+        await draw.finish("您在黑名单中，请虔诚忏悔解封！")
     cmd_text = arg.extract_plain_text().strip()
     await chat_record.send(MessageSegment.text("正在获取创作灵感......".format(cmd_text)))
 
-    openai.api_key = api_key
-    response = openai.Image.create(
-        model="dall-e-2",
-        prompt=cmd_text,
-        size="256x256",
-        quality="standard",
-        n=1,
-    )
+    try:
+        openai.api_key = api_key
+        response = openai.Image.create(
+            model="dall-e-2",
+            prompt=cmd_text,
+            size="256x256",
+            quality="standard",
+            n=1,
+        )
 
-    img_url = response.data[0].url
-    file_id = await bot.upload_file(type="url",
-                                    name="test.png",
-                                    url=img_url
-                                    )
-    message = MessageSegment.image(file_id=file_id["file_id"])
-    await draw.finish(message)
+        img_url = response.data[0].url
+        file_id = await bot.upload_file(type="url",
+                                        name="test.png",
+                                        url=img_url
+                                        )
+        message = MessageSegment.image(file_id=file_id["file_id"])
+        await draw.finish(message)
+    except Exception as e:
+        await draw.finish(f"An error occurred: {e}")
 
 # 根据消息类型创建会话id
 def create_session_id(event):
@@ -143,23 +148,3 @@ def create_session_id(event):
     else:
         session_id = event.get_session_id()
     return session_id
-
-# 发送请求模块
-async def get_response(content, proxy):
-    openai.api_key = api_key
-    if proxy != "":
-        openai.proxy = proxy
-
-    res_ = await openai.ChatCompletion.acreate(
-        model=model_id,
-        messages=[
-            {"role": "user", "content": content}
-        ]
-    )
-
-    res = res_.choices[0].message.content
-
-    while res.startswith("\n") != res.startswith("？"):
-        res = res[1:]
-
-    return res
