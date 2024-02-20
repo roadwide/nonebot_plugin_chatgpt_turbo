@@ -58,6 +58,9 @@ async def rule_check(event: MessageEvent, bot: Bot) -> bool:
 # 带上下文的聊天
 chat_record = on_message(rule=rule_check)
 
+# 不带上下文的聊天
+chat_request = on_command("gpt4", block=False, priority=1)
+
 # 清除历史记录
 clear_request = on_command("clear", block=True, priority=1)
 
@@ -139,6 +142,26 @@ async def send_image(bot: Bot, event: MessageEvent, arg: Message = CommandArg())
     except Exception as e:
         await draw.finish(f"An error occurred: {e}")
 
+
+@chat_request.handle()
+async def _(event: MessageEvent, msg: Message = CommandArg()):
+
+    if isinstance(event, PrivateMessageEvent) and not plugin_config.enable_private_chat:
+        chat_record.finish("对不起，私聊暂不支持此功能。")
+
+    content = msg.extract_plain_text()
+    if content == "" or content is None:
+        await chat_request.finish(MessageSegment.text("内容不能为空！"))
+
+    await chat_request.send(MessageSegment.text("ChatGPT正在思考中......"))
+
+    try:
+        res = await get_response(content, proxy)
+
+    except Exception as error:
+        await chat_request.finish(str(error))
+    await chat_request.finish(MessageSegment.text(res))
+
 # 根据消息类型创建会话id
 def create_session_id(event):
     if isinstance(event, PrivateMessageEvent):
@@ -148,3 +171,23 @@ def create_session_id(event):
     else:
         session_id = event.get_session_id()
     return session_id
+
+# 单条对话请求, gpt4
+async def get_response(content, proxy):
+    openai.api_key = api_key
+    if proxy != "":
+        openai.proxy = proxy
+
+    res_ = await openai.ChatCompletion.acreate(
+        model="gpt-4",
+        messages=[
+            {"role": "user", "content": content}
+        ]
+    )
+
+    res = res_.choices[0].message.content
+
+    while res.startswith("\n") != res.startswith("？"):
+        res = res[1:]
+
+    return res
