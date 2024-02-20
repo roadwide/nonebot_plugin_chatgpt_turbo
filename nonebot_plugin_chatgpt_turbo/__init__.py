@@ -191,3 +191,52 @@ async def get_response(content, proxy):
         res = res[1:]
 
     return res
+
+
+# 调试命令
+help = on_command("help")
+get_group_list = on_command("get_group_list")
+get_group_member_list = on_command("get_group_member_list")
+send_group = on_command("send_group")
+send_private = on_command("send_private")
+
+@help.handle()
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    help_dic = {
+        "/get_group_list": "获取群组列表",
+        "/get_group_member_list [group_id]": "获取群组成员",
+        "/send_group [group_id]": "给指定群组发消息",
+        "/send_private [user_id]": "给指定用户发消息" 
+    }
+    message = ''
+    for k, v in help_dic.items():
+        message += k + v + '\n'
+    await help.finish(message)
+
+@get_group_list.handle()
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    cmd_text = arg.extract_plain_text().strip()
+    group_list = await bot.get_group_list()
+    await get_group_list.finish(str(group_list))
+
+
+@get_group_member_list.handle()
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    cmd_text = arg.extract_plain_text().strip()
+    group_member_list = await bot.get_group_member_list(group_id=cmd_text)
+    await get_group_member_list.finish(str(group_member_list))
+
+
+@send_group.handle()
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    cmd_text = arg.extract_plain_text().strip()
+    cmd_list = cmd_text.split(" ")
+    message = MessageSegment.text(cmd_list[1])
+    await bot.send_message(detail_type="group",group_id=cmd_list[0],message=message) 
+
+@send_private.handle()
+async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
+    cmd_text = arg.extract_plain_text().strip()
+    cmd_list = cmd_text.split(" ")
+    message = MessageSegment.text(cmd_list[1])
+    await bot.send_message(detail_type="private",user_id=cmd_list[0],message=message) 
