@@ -231,12 +231,12 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     cmd_text = arg.extract_plain_text().strip()
     cmd_list = cmd_text.split(" ")
-    message = MessageSegment.text(cmd_list[1])
+    message = MessageSegment.text(unescape(cmd_list[1]))
     await bot.send_message(detail_type="group",group_id=cmd_list[0],message=message) 
 
 @send_private.handle()
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     cmd_text = arg.extract_plain_text().strip()
     cmd_list = cmd_text.split(" ")
-    message = MessageSegment.text(cmd_list[1])
+    message = MessageSegment.text(unescape(cmd_list[1]))
     await bot.send_message(detail_type="private",user_id=cmd_list[0],message=message) 
