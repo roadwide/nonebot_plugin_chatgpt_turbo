@@ -204,9 +204,9 @@ send_private = on_command("send_private")
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     help_dic = {
         "/get_group_list": "获取群组列表",
-        "/get_group_member_list <group_id>": "获取群组成员",
-        "/send_group <group_id>": "给指定群组发消息",
-        "/send_private <user_id>": "给指定用户发消息" 
+        "/get_group_member_list [group_id]": "获取群组成员",
+        "/send_group [group_id]": "给指定群组发消息",
+        "/send_private [user_id]": "给指定用户发消息" 
     }
     message = ''
     for k, v in help_dic.items():
