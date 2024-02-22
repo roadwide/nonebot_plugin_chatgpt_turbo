@@ -1,7 +1,6 @@
 import nonebot
 import openai
-
-
+import argparse
 
 from html import unescape
 from nonebot import on_command, on_message, get_bot
@@ -197,21 +196,22 @@ async def get_response(content, proxy):
 help = on_command("help")
 get_group_list = on_command("get_group_list")
 get_group_member_list = on_command("get_group_member_list")
-send_group = on_command("send_group")
-send_private = on_command("send_private")
+send_link = on_command("send_link")
+send_message = on_command("send_message")
 
 @help.handle()
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     help_dic = {
         "/get_group_list": "获取群组列表",
         "/get_group_member_list [group_id]": "获取群组成员",
-        "/send_group [group_id]": "给指定群组发消息",
-        "/send_private [user_id]": "给指定用户发消息" 
+        "/send_message --type --id --content ": "发送消息",
+        "/send_link --type --id --title --des --url --file_id": "发送链接" 
     }
     message = ''
     for k, v in help_dic.items():
         message += k + v + '\n'
     await help.finish(message)
+
 
 @get_group_list.handle()
 async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
@@ -227,16 +227,47 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
     await get_group_member_list.finish(str(group_member_list))
 
 
-@send_group.handle()
-async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
-    cmd_text = arg.extract_plain_text().strip()
-    cmd_list = cmd_text.split(" ")
-    message = MessageSegment.text(unescape(cmd_list[1]))
-    await bot.send_message(detail_type="group",group_id=cmd_list[0],message=message) 
+@send_message.handle()
+async def _(bot: Bot, cmd_arg: Message = CommandArg()):
+    # 使用 argparse 解析命令参数
+    parser = argparse.ArgumentParser(prog='send_link')
+    parser.add_argument('--type', type=str, help='消息类型 group/private')
+    parser.add_argument('--id', type=str, help='user_id/group_id')
+    parser.add_argument('--content', type=str, help='消息内容')
+    try:
+        args = parser.parse_args(cmd_arg.extract_plain_text().strip().split(' '))
+        message = MessageSegment.text(unescape(args.content))
+        await bot.send_message(detail_type=args.type,
+                            user_id=args.id,
+                            group_id=args.id,
+                            message=message) 
+    except:
+        await send_message.finish("发送失败")
+    await send_message.finish("发送成功")
 
-@send_private.handle()
-async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
-    cmd_text = arg.extract_plain_text().strip()
-    cmd_list = cmd_text.split(" ")
-    message = MessageSegment.text(unescape(cmd_list[1]))
-    await bot.send_message(detail_type="private",user_id=cmd_list[0],message=message) 
+
+@send_link.handle()
+async def _(bot: Bot, cmd_arg: Message = CommandArg()):
+    # 使用 argparse 解析命令参数
+    parser = argparse.ArgumentParser(prog='send_link')
+    parser.add_argument('--type', type=str, help='消息类型 group/private')
+    parser.add_argument('--id', type=str, help='user_id/group_id')
+    parser.add_argument('--title', type=str, help='文章标题')
+    parser.add_argument('--des', type=str, help='消息卡片摘要')
+    parser.add_argument('--url', type=str, help='文章链接')
+    parser.add_argument('--file_id', type=str, help='消息图片id', default=None)
+    try:
+        args = parser.parse_args(cmd_arg.extract_plain_text().strip().split(' '))
+        message = MessageSegment("wx.link",{
+            "title": args.title,
+            "des": args.des,
+            "url": args.url,
+            "file_id": args.file_id
+            })
+        await bot.send_message(detail_type=args.type,
+                            user_id=args.id,
+                            group_id=args.id,
+                            message=message) 
+    except:
+        await send_link.finish("发送失败")
+    await send_link.finish("发送成功")
