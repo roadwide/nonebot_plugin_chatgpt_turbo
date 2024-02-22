@@ -205,7 +205,7 @@ async def _(bot: Bot, event: MessageEvent, arg: Message = CommandArg()):
         "/get_group_list": "获取群组列表",
         "/get_group_member_list [group_id]": "获取群组成员",
         "/send_message --type --id --content ": "发送消息",
-        "/send_link --type --id --title --des --url --file_id": "发送链接" 
+        "/send_link --type --id --title --des --url --img_url": "发送链接" 
     }
     message = ''
     for k, v in help_dic.items():
@@ -255,14 +255,20 @@ async def _(bot: Bot, cmd_arg: Message = CommandArg()):
     parser.add_argument('--title', type=str, help='文章标题')
     parser.add_argument('--des', type=str, help='消息卡片摘要')
     parser.add_argument('--url', type=str, help='文章链接')
-    parser.add_argument('--file_id', type=str, help='消息图片id', default=None)
+    parser.add_argument('--img_url', type=str, help='消息图片url', default=None)
     try:
         args = parser.parse_args(cmd_arg.extract_plain_text().strip().split(' '))
+        file_id = {"file_id": None}
+        if args.img_url:
+            file_id = await bot.upload_file(type="url",
+                                        name="test.png",
+                                        url=args.img_url
+                                        )
         message = MessageSegment("wx.link",{
             "title": args.title,
             "des": args.des,
             "url": args.url,
-            "file_id": args.file_id
+            "file_id": file_id["file_id"]
             })
         await bot.send_message(detail_type=args.type,
                             user_id=args.id,
